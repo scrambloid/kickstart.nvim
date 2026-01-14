@@ -91,7 +91,7 @@ vim.g.mapleader = ' '
 vim.g.maplocalleader = ' '
 
 -- Set to true if you have a Nerd Font installed and selected in the terminal
-vim.g.have_nerd_font = false
+vim.g.have_nerd_font = true
 
 -- [[ Setting options ]]
 -- See `:help vim.o`
@@ -102,7 +102,7 @@ vim.g.have_nerd_font = false
 vim.o.number = true
 -- You can also add relative line numbers, to help with jumping.
 --  Experiment for yourself to see if you like it!
--- vim.o.relativenumber = true
+vim.o.relativenumber = true
 
 -- Enable mouse mode, can be useful for resizing splits for example!
 vim.o.mouse = 'a'
@@ -605,6 +605,21 @@ require('lazy').setup({
               callback = vim.lsp.buf.clear_references,
             })
 
+            vim.api.nvim_create_autocmd('LspAttach', {
+              group = vim.api.nvim_create_augroup('lsp_attach_disable_ruff_hover', { clear = true }),
+              callback = function(args)
+                local client = vim.lsp.get_client_by_id(args.data.client_id)
+                if client == nil then
+                  return
+                end
+                if client.name == 'ruff' then
+                  -- Disable hover in favor of Pyright
+                  client.server_capabilities.hoverProvider = false
+                end
+              end,
+              desc = 'LSP: Disable hover capability from Ruff',
+            })
+
             vim.api.nvim_create_autocmd('LspDetach', {
               group = vim.api.nvim_create_augroup('kickstart-lsp-detach', { clear = true }),
               callback = function(event2)
@@ -671,9 +686,48 @@ require('lazy').setup({
       --  - settings (table): Override the default settings passed when initializing the server.
       --        For example, to see the options for `lua_ls`, you could go to: https://luals.github.io/wiki/settings/
       local servers = {
-        -- clangd = {},
+
+        clangd = {
+          capabilities = {
+            offsetEncoding = { 'utf-8', 'utf-16' },
+            textDocument = {
+              completion = {
+                editsNearCursor = true,
+              },
+            },
+          },
+          cmd = { 'clangd' },
+          filetypes = { 'c', 'cpp', 'objc', 'objcpp', 'cuda' },
+          on_attach = { '../lsp/clangd.lua:65' },
+          on_init = { '../lsp/clangd.lua:65' },
+          root_markers = { '.clangd', '.clang-tidy', '.clang-format', 'compile_commands.json', 'compile_flags.txt', 'configure.ac', '.git' },
+        },
+
         -- gopls = {},
-        -- pyright = {},
+
+        pyright = {
+          cmd = { 'pyright-langserver', '--stdio' },
+          filetypes = { 'python' },
+          on_attach = { '../lsp/pyright.lua:25' },
+          root_markers = { 'pyrightconfig.json', 'pyproject.toml', 'setup.py', 'setup.cfg', 'requirements.txt', 'Pipfile', '.git' },
+          disaleOrganizeImports = true,
+          settings = {
+            python = {
+              analysis = {
+                autoSearchPaths = true,
+                diagnosticMode = 'openFilesOnly',
+                useLibraryCodeForTypes = true,
+                ignore = { '*' },
+              },
+            },
+          },
+        },
+
+        ruff = {
+          init_options = {
+            settings = {},
+          },
+        },
         -- rust_analyzer = {},
         -- ... etc. See `:help lspconfig-all` for a list of all the pre-configured LSPs
         --
@@ -768,6 +822,7 @@ require('lazy').setup({
       end,
       formatters_by_ft = {
         lua = { 'stylua' },
+        python = { 'ruff_fix', 'ruff_format', 'ruff_organize_imports' },
         -- Conform can also run multiple formatters sequentially
         -- python = { "isort", "black" },
         --
@@ -881,20 +936,79 @@ require('lazy').setup({
     -- change the command in the config to whatever the name of that colorscheme is.
     --
     -- If you want to see what colorschemes are already installed, you can use `:Telescope colorscheme`.
-    'folke/tokyonight.nvim',
+    --'folke/tokyonight.nvim',
+    --'sainnhe/gruvbox-material',
+    --'rose-pine/neovim',
+    --'scottmckendry/cyberdream.nvim',
+    --'rebelot/kanagawa.nvim',
+    --'navarasu/onedark.nvim',
+    --'projekt0n/github-nvim-theme',
+    --'AlexvZyl/nordic.nvim',
+    --'sainnhe/everforest',
+    --'catppuccin/nvim',
+    --'olimorris/onedarkpro.nvim',
+    'uhs-robert/oasis.nvim',
+    --'marko-cerovac/material.nvim',
+    --'Mofiqul/vscode.nvim',
     priority = 1000, -- Make sure to load this before all the other start plugins.
     config = function()
       ---@diagnostic disable-next-line: missing-fields
-      require('tokyonight').setup {
+      --require('tokyonight').setup {
+      --  transparent = true,
+      --  styles = {
+      --    sidebars = 'transparent',
+      --    floats = 'transparent',
+      --    comments = { italic = false }, -- Disable italics in comments
+      --  },
+      --}
+      --require('github-theme').setup {
+      --  options = {
+      --    transparent = true,
+      --    --hide_end_of_buffer = true,
+      --    darken = {
+      --      floats = true,
+      --      sidebars = {
+      --        enable = true,
+      --      },
+      --    },
+      --  },
+      --}
+
+      require('oasis').setup {
+        style = 'canyon',
+        transparent = true,
+        terminal_colors = true,
+        themed_syntax = true,
         styles = {
-          comments = { italic = false }, -- Disable italics in comments
+          bold = true, -- Enable bold text (keywords, functions, etc.)
+          italic = true, -- Enable italics (comments, certain keywords)
+          underline = true, -- Enable underlined text (matching words)
+          undercurl = true, -- Enable undercurl for diagnostics/spelling
+          strikethrough = true, -- Enable strikethrough text (deprecations)
+        },
+        palette_overrides = {
+          oasis_canyon = {
+            syntax = { comment = '#fab96e' },
+          },
         },
       }
 
+      --require('onedark').setup {
+      --  style = 'warmer',
+      --}
+      --require('vscode').setup {
+      --  --disable_nvimtree_bg = true,
+      --  transparent = true,
+      --  styles = {
+      --    sidebars = 'transparent',
+      --    floats = 'transparent',
+      --  },
+      --}
       -- Load the colorscheme here.
-      -- Like many other themes, this one has different styles, and you could load
+      -- Like many other themes, this one has different styles, and you could load.
       -- any other, such as 'tokyonight-storm', 'tokyonight-moon', or 'tokyonight-day'.
-      vim.cmd.colorscheme 'tokyonight-night'
+      vim.cmd.colorscheme 'oasis'
+      --vim.g.material_style 'darker'
     end,
   },
 
@@ -973,18 +1087,18 @@ require('lazy').setup({
   --  Here are some example plugins that I've included in the Kickstart repository.
   --  Uncomment any of the lines below to enable them (you will need to restart nvim).
   --
-  -- require 'kickstart.plugins.debug',
-  -- require 'kickstart.plugins.indent_line',
+  require 'kickstart.plugins.debug',
+  require 'kickstart.plugins.indent_line',
   -- require 'kickstart.plugins.lint',
   -- require 'kickstart.plugins.autopairs',
-  -- require 'kickstart.plugins.neo-tree',
+  require 'kickstart.plugins.neo-tree',
   -- require 'kickstart.plugins.gitsigns', -- adds gitsigns recommend keymaps
 
   -- NOTE: The import below can automatically add your own plugins, configuration, etc from `lua/custom/plugins/*.lua`
   --    This is the easiest way to modularize your config.
   --
   --  Uncomment the following line and add your plugins to `lua/custom/plugins/*.lua` to get going.
-  -- { import = 'custom.plugins' },
+  { import = 'custom.plugins' },
   --
   -- For additional information with loading, sourcing and examples see `:help lazy.nvim-🔌-plugin-spec`
   -- Or use telescope!
