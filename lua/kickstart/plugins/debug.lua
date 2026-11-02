@@ -28,7 +28,7 @@ return {
       lazy = true,
       config = function()
         require('dap-python').setup 'uv'
-        require('dap-python').test_runner = 'pytest' --run dap debug commands and copy default config to the dap call
+        --require('dap-python').test_runner = 'pytest' --run dap debug commands and copy default config to the dap call
         --see :help dap-configuration
       end,
       dependencies = {

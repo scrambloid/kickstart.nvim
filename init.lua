@@ -835,7 +835,7 @@ require('lazy').setup({
   { -- Autocompletion
     'saghen/blink.cmp',
     event = 'VimEnter',
-    version = '1.*',
+    version = '*',
     dependencies = {
       -- Snippet Engine
       {
@@ -864,6 +864,13 @@ require('lazy').setup({
         opts = {},
       },
       'folke/lazydev.nvim',
+      'micangl/cmp-vimtex',
+      {
+        'saghen/blink.compat',
+        version = '*',
+        lazy = true,
+        opts = {},
+      },
     },
     --- @module 'blink.cmp'
     --- @type blink.cmp.Config
@@ -909,9 +916,15 @@ require('lazy').setup({
       },
 
       sources = {
-        default = { 'lsp', 'path', 'snippets', 'lazydev' },
+        default = { 'lsp', 'path', 'snippets', 'lazydev', 'vimtex' },
         providers = {
           lazydev = { module = 'lazydev.integrations.blink', score_offset = 100 },
+          vimtex = {
+            name = 'vimtex',
+            min_keyword_length = 2,
+            module = 'blink.compat.source',
+            score_offset = 80,
+          },
         },
       },
 
@@ -924,7 +937,7 @@ require('lazy').setup({
       -- the rust implementation via `'prefer_rust_with_warning'`
       --
       -- See :h blink-cmp-config-fuzzy for more information
-      fuzzy = { implementation = 'lua' },
+      fuzzy = { implementation = 'prefer_rust_with_warning' },
 
       -- Shows a signature help window while you type arguments for a function
       signature = { enabled = true },
@@ -1063,10 +1076,11 @@ require('lazy').setup({
       auto_install = true,
       highlight = {
         enable = true,
+        disable = { 'latex' },
         -- Some languages depend on vim's regex highlighting system (such as Ruby) for indent rules.
         --  If you are experiencing weird indenting issues, add the language to
         --  the list of additional_vim_regex_highlighting and disabled languages for indent.
-        additional_vim_regex_highlighting = { 'ruby' },
+        additional_vim_regex_highlighting = { 'ruby', 'latex' },
       },
       indent = { enable = true, disable = { 'ruby' } },
     },
